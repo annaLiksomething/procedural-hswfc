@@ -3,9 +3,9 @@ import pygame
 import random
 
 # DD
-RES = 256
+RES = 128
 DIMS = (60, 40)
-SCREEN = (1500, 1000)#(DIMS[0]*RES, DIMS[1]*RES)
+SCREEN = (1700, 980)#(DIMS[0]*RES, DIMS[1]*RES) 
 display = pygame.display.set_mode(SCREEN)
 '''
 TILES = "tiles"
@@ -35,7 +35,6 @@ with open(PATH_METADATA, "r") as file:
     for line in file:
         line = line.strip().split("\t")
         if line[5] == "1":
-            print(line)
             metaEntry = {"ID": line[0], "SOCKETS": [
                 line[1], line[2], line[3], line[4]], "FIXED": True, "ROTATION": 0}
             metadata.append(metaEntry)
