@@ -35,6 +35,7 @@ with open(PATH_METADATA, "r") as file:
     for line in file:
         line = line.strip().split("\t")
         if line[5] == "1":
+            print(line)
             metaEntry = {"ID": line[0], "SOCKETS": [
                 line[1], line[2], line[3], line[4]], "FIXED": True, "ROTATION": 0}
             metadata.append(metaEntry)
