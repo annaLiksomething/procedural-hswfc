@@ -6,36 +6,16 @@ import random
 
 
 dag = nx.DiGraph()
-dag.add_edges_from([("root", "village"), ("root", "castle"), ("root", "land"), ("village", "house"), ("village", "road"), ("castle", "road"), ("land", "road"), ("land", "water"), ("house", "22"), ("house", "6"), ("house", "6"), ("house", "8"), ("house", "23"), ("road", "23"), ("road", "7"), ("road", "9"), ("house", "24"), ("road", "24"), ("water", "24"), ("road", "0"), ("castle", "0"), ("road", "1"), ("castle", "1"), ("road", "2"), ("castle", "2"), ("road", "5"), ("castle", "5"), ("road", "12"), ("castle", "12"), ("road", "14"), ("castle", "14"), ("road", "26"), ("castle", "26"), ("water", "26"), ("castle", "3"), ("castle", "4"), ("castle", "10"), ("castle", "11"), ("castle", "13"), ("castle", "15"), ("road", "21"), ("water", "21"), ("road", "25"), ("water", "25"), ("castle", "18"), ("water", "18"), ("castle", "20"), ("water", "20"), ("water", "16"), ("water", "17"), ("water", "19")])
+dag.add_edges_from([("root", "village"), ("root", "castle"), ("root", "land"), ("village", "house"), ("village", "road"), ("castle", "road"), ("land", "road"), ("land", "water"), ("house", "22"), ("house", "6"), ("house", "6"), ("house", "8"), ("house", "23"), ("road", "23"), ("road", "7"), ("road", "9"), ("house", "24"), ("road", "24"), ("water", "24"), ("road", "0"), ("castle", "0"), ("road", "1"), ("castle", "1"), ("road", "2"), ("castle", "2"), ("road", "5"), ("castle", "5"), ("road", "12"), ("castle", "12"), ("road", "14"), ("castle", "14"), ("road", "26"), ("castle", "26"), ("water", "26"), ("castle", "3"), ("castle", "4"), ("castle", "10"), ("castle", "11"), ("castle", "13"), ("castle", "15"), ("road", "21"), ("water", "21"), ("road", "25"), ("water", "25"), ("castle", "18"), ("water", "18"), ("castle", "20"), ("water", "20"), ("water", "16"), ("water", "17"), ("water", "19"), ("house", "27")])
 
-
+meta_tiles = ["village", "castle", "land", "road", "water", "house"]
 
 terminal_q = Queue()
 
-meta_q = Queue()
 
-for i in range(27):
+for i in range(28):
     terminal_q.put(str(i))
-
-print (terminal_q.queue) 
-
-
-
-print(dag.order())
     
-print(nx.is_directed_acyclic_graph(dag))
-plt.tight_layout()
-nx.draw_networkx(dag, arrows=True)
-plt.savefig("dag.png", format="PNG")
-plt.clf()
-terminalTiles = []
-metaTiles = []
-
-while terminalTiles != []:
-    currentTile = terminalTiles[0]
-    for meta in metaTiles:
-        "this is not done yet"
-
 
 # MODULES
 
@@ -90,6 +70,14 @@ def socketMatch(socket, targetsocket):
             return False
     return True
 
+def metaConstraints(currentTile, neighborTile):
+    print ("neighbortile", neighborTile)
+    if dag.has_edge("house", currentTile["ID"] and dag.has_edge("castle", neighborTile["ID"])):
+        return False
+    if dag.has_edge("castle", currentTile["ID"] and dag.has_edge("house", neighborTile["ID"])):
+        return False
+    return True
+
 # DD. TILE
 # tile = Tile()
 # interp. a tile for the animation of WFC in a 2D grid
@@ -97,6 +85,7 @@ def socketMatch(socket, targetsocket):
 # c is column, r is row
 class Tile:
     def __init__(self, c, r):
+        # self.name = metadata[-1]['ID']
         self.c = c
         self.r = r
         self.x = self.c * RES
@@ -109,30 +98,68 @@ class Tile:
         self.potentialTiles = list(metadata) #will be updated as WFC runs
         self.collapsed = False
         self.sockets = ["" for _ in range(4)] # created when collapsed
-        self.RIGHT_neigh = {"COLLAPSED": None, "SOCKET": None}
-        self.DOWN_neigh = {"COLLAPSED": None, "SOCKET": None}
-        self.LEFT_neigh = {"COLLAPSED": None, "SOCKET": None}
-        self.UP_neigh = {"COLLAPSED": None, "SOCKET": None}
+        self.id = ""
+        self.RIGHT_neigh = {"COLLAPSED": None, "SOCKET": None, "ID": None}
+        self.DOWN_neigh = {"COLLAPSED": None, "SOCKET": None, "ID": None}
+        self.LEFT_neigh = {"COLLAPSED": None, "SOCKET": None, "ID": None}
+        self.UP_neigh = {"COLLAPSED": None, "SOCKET": None, "ID": None}
 
     def draw(self):
         display.blit(self.img, self.rect)
 
+    # def check_meta_constraints(self):
+    #     # print("hello_this_is_meta_constraints")
+
+    #     # print(self.name)
+    #     # for meta in meta_tiles:
+    #     #     if meta == "house":
+    #     print (self.name)
+    #     print(self.img)
+    #     print(dag.has_edge("house", self.name))
+    #     if dag.has_edge("house", self.name) :
+    #         for potTile in self.potentialTiles:
+    #             if potTile["ID"] in dag["castle"].keys():
+                    
+    #                 self.potentialTiles.remove(potTile)
+    #         for tile in self.potentialTiles:
+    #             print("house neighbours", tile["ID"])
+            
+        
+    #     if dag.has_edge("castle", self.name) :
+    #         for potTile in self.potentialTiles:
+    #             if potTile["ID"] in dag["house"].keys():
+    #                 self.potentialTiles.remove(potTile)
+
+    #         print("castle neighbours", self.potentialTiles)
+        
+
+                        
+
+                
+
+        
     def updateEntropy(self, lowestEntropy):
+        
         placeHolderTileSet = []
+       
         for potTile in self.potentialTiles:
+
+            
             # assume tile is valid until a neighbor proves otherwise
             validTile = True
-            if self.RIGHT_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][0], self.RIGHT_neigh["SOCKET"]):
+            if self.RIGHT_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][0], self.RIGHT_neigh["SOCKET"]) or not metaConstraints(potTile, self.RIGHT_neigh):
                 validTile = False
-            if self.DOWN_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][1], self.DOWN_neigh["SOCKET"]):
+            if self.DOWN_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][1], self.DOWN_neigh["SOCKET"]) or not metaConstraints(potTile, self.DOWN_neigh):
                 validTile = False
-            if self.LEFT_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][2], self.LEFT_neigh["SOCKET"]):
+            if self.LEFT_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][2], self.LEFT_neigh["SOCKET"]) or not metaConstraints(potTile, self.LEFT_neigh):
                 validTile = False
-            if self.UP_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][3], self.UP_neigh["SOCKET"]):
+            if self.UP_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][3], self.UP_neigh["SOCKET"]) or not metaConstraints(potTile, self.UP_neigh):
                 validTile = False
 
             if validTile:
                 placeHolderTileSet.append(potTile)
+        
+            
         self.potentialTiles = placeHolderTileSet
 
         # Only goes through each single tile once
@@ -152,16 +179,16 @@ class Tile:
 
             if c < DIMS[0]-1:
                 self.RIGHT_neigh = {
-                    "COLLAPSED": grid[r][c+1].collapsed, "SOCKET": grid[r][c+1].sockets[2]}
+                    "COLLAPSED": grid[r][c+1].collapsed, "SOCKET": grid[r][c+1].sockets[2], "ID": grid[r][c+1].id}
             if r < DIMS[1]-1:
                 self.DOWN_neigh = {
-                    "COLLAPSED": grid[r+1][c].collapsed, "SOCKET": grid[r+1][c].sockets[3]}
+                    "COLLAPSED": grid[r+1][c].collapsed, "SOCKET": grid[r+1][c].sockets[3], "ID": grid[r+1][c].id}
             if c > 0:
                 self.LEFT_neigh = {
-                    "COLLAPSED": grid[r][c-1].collapsed, "SOCKET": grid[r][c-1].sockets[0]}
+                    "COLLAPSED": grid[r][c-1].collapsed, "SOCKET": grid[r][c-1].sockets[0], "ID": grid[r][c-1].id}
             if r > 0:
                 self.UP_neigh = {
-                    "COLLAPSED": grid[r-1][c].collapsed, "SOCKET": grid[r-1][c].sockets[1]}
+                    "COLLAPSED": grid[r-1][c].collapsed, "SOCKET": grid[r-1][c].sockets[1], "ID": grid[r-1][c].id}
 
     def collapse(self):
         self.collapsed = True
@@ -170,8 +197,10 @@ class Tile:
         else:
             potTile = metadata[-1]
         self.name = potTile["ID"]
+        # print("collapsed tile", self.name)
         self.img = pygame.image.load(f"{PATH}/{self.name}.png")
         self.sockets = potTile["SOCKETS"]
+        self.id = potTile["ID"]
         self.entropy = 0
         self.img = pygame.transform.rotate(self.img, -potTile["ROTATION"] * 90)
 
@@ -196,7 +225,7 @@ for r in range(DIMS[1]):
 # CODE
 
 grid[0][0].collapse()
-
+# grid[0][0].check_meta_constraints()
 
 def draw():
     display.fill("#1e1e1e")
@@ -220,6 +249,7 @@ def update():
     for row in grid:
         for tile in row:
             if not tile.collapsed:
+                # tile.check_meta_constraints()
                 lowestEntropy = tile.updateEntropy(lowestEntropy)
 
     candidates = []
