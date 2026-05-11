@@ -9,10 +9,11 @@ plt.tight_layout()
 nx.draw_networkx(dag, arrows=True)
 plt.savefig("dag.png", format="PNG")
 plt.clf()
-terminalTiles = []
-metaTiles = []
+terminalTiles = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26"]
+metaTiles = ["village", "castle", "land", "house", "road", "water"]
 
 while terminalTiles != []:
     currentTile = terminalTiles[0]
     for meta in metaTiles:
-        "this is not done yet"
+        if (meta, currentTile) in dag.edges:
+            print(f"{currentTile} is a child of {meta}")
