@@ -6,7 +6,8 @@ import random
 
 
 dag = nx.DiGraph()
-dag.add_weighted_edges_from([("root", "village", 0.4), ("root", "castle", 0.2), ("root", "land", 0.4), ("village", "house", 0.6), ("village", "road", 0.4), ("castle", "road", 0.4), ("land", "road", 0.6), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("road", "24", 0.1), ("water", "24", 0.1), ("road", "0", 0.1), ("castle", "0", 0.1), ("road", "1", 0.1), ("castle", "1", 0.1), ("road", "2", 0.1), ("castle", "2", 0.1), ("road", "5", 0.1), ("castle", "5", 0.1), ("road", "12", 0.1), ("castle", "12", 0.1), ("road", "14", 0.1), ("castle", "14", 0.1), ("road", "26", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
+dag.add_weighted_edges_from([("root", "village", 0.3), ("root", "castle", 0.3), ("root", "land", 0.3), ("village", "house", 0.5), ("village", "road", 0.5), ("castle", "road", 0.3), ("land", "road", 0.3), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("water", "24", 0.1), ("castle", "0", 0.3), ("castle", "1", 0.3), ("castle", "2", 0.3), ("castle", "5", 0.3), ("castle", "12", 0.1), ("castle", "14", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.6), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
+# old dag with road being almost everything dag.add_weighted_edges_from([("root", "village", 0.4), ("root", "castle", 0.1), ("root", "land", 0.4), ("village", "house", 0.6), ("village", "road", 0.4), ("castle", "road", 0.1), ("land", "road", 0.6), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("road", "24", 0.1), ("water", "24", 0.1), ("road", "0", 0.1), ("castle", "0", 0.1), ("road", "1", 0.1), ("castle", "1", 0.1), ("road", "2", 0.1), ("castle", "2", 0.1), ("road", "5", 0.1), ("castle", "5", 0.1), ("road", "12", 0.1), ("castle", "12", 0.1), ("road", "14", 0.1), ("castle", "14", 0.1), ("road", "26", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 
 plt.tight_layout()
 nx.draw_networkx(dag, arrows=True)
@@ -30,7 +31,7 @@ for i in range(28):
 
 # DD
 RES = 128
-DIMS = (10, 6) #14x8)
+DIMS = (17, 10) #14x8)
 SCREEN = (DIMS[0]*RES, DIMS[1]*RES) 
 display = pygame.display.set_mode(SCREEN)
 '''
@@ -164,12 +165,37 @@ class Tile:
     def collapse(self):
         print("current tile:", self.c, self.r, "with entropy", self.entropy)
         self.collapsed = True
-        if len(self.potentialTiles) > 1:            
-            potTile = random.choice(self.potentialTiles)
+        if len(self.potentialTiles) > 1:   
+            weight = 0 
+            potTiles=[]
+            for tile in self.potentialTiles:
+                id = str(tile["ID"])
+                predec = list(dag.predecessors(id))
+                for pre in predec:
+                    w = dag[pre][id]["weight"]
+                    predec_l2 = list(dag.predecessors(pre))
+                    if predec_l2 != []:
+                        for pre_l2 in predec_l2:
+                            f = w
+                            w+=dag[pre_l2][pre]["weight"]
+                            predec_l3 = list(dag.predecessors(pre_l2))
+                            if predec_l3 == []:
+                                if w >= weight: 
+                                    weight = w
+                                    potTiles.append(tile)
+                            else:
+                                pre_l3 = predec_l3[0] #based on how our graph look there should only be one here
+                                w+=dag[pre_l3][pre_l2]["weight"] 
+                                if w >= weight: 
+                                    weight = w
+                                    potTiles.append(tile)
+                                    w = f
+                                else:
+                                    w = f #reset to what it was in the beginning of this loop
+      
+            potTile = random.choice(potTiles) #if there are more tiles with the same weight, choose randomly
             self.name = potTile["ID"]
             self.metatile =  list(dag.predecessors(self.name))
-            # print("metatile", self.metatile)
-            # print("collapsed tile", self.name)
             self.img = pygame.image.load(f"{PATH}/{self.name}.png")
             self.sockets = potTile["SOCKETS"]
             self.id = potTile["ID"]
