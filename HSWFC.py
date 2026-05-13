@@ -8,17 +8,11 @@ import random
 dag = nx.DiGraph()
 dag.add_weighted_edges_from([("root", "village", 0.4), ("root", "castle", 0.2), ("root", "land", 0.4), ("village", "house", 0.6), ("village", "road", 0.4), ("castle", "road", 0.4), ("land", "road", 0.6), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("road", "24", 0.1), ("water", "24", 0.1), ("road", "0", 0.1), ("castle", "0", 0.1), ("road", "1", 0.1), ("castle", "1", 0.1), ("road", "2", 0.1), ("castle", "2", 0.1), ("road", "5", 0.1), ("castle", "5", 0.1), ("road", "12", 0.1), ("castle", "12", 0.1), ("road", "14", 0.1), ("castle", "14", 0.1), ("road", "26", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 
-plt.tight_layout()
-nx.draw_networkx(dag, arrows=True)
-plt.savefig("dag.png", format="PNG")
-# tell matplotlib you're done with the plot: https://stackoverflow.com/questions/741877/how-do-i-tell-matplotlib-that-i-am-done-with-a-plot
-plt.clf()
-
 meta_tiles = ["village", "castle", "land", "road", "water", "house"]
-
-
+# adjacency_constraints = {"house":[]}
 terminal_q = Queue()
 collapsed_tiles = Queue()
+uncollapsed_q = Queue()
 
 
 for i in range(28):
@@ -30,7 +24,7 @@ for i in range(28):
 
 # DD
 RES = 128
-DIMS = (14, 8) #14x8)
+DIMS = (13, 7) #14x8)
 SCREEN = (DIMS[0]*RES, DIMS[1]*RES) 
 display = pygame.display.set_mode(SCREEN)
 '''
@@ -79,7 +73,6 @@ def socketMatch(socket, targetsocket):
     return True
 
 def metaConstraints(currentTile, neighborTile):
-    #print ("neighbortile", neighborTile)
     if dag.has_edge("house", currentTile["ID"]) and dag.has_edge("castle", neighborTile["ID"]):
         return False
     if dag.has_edge("castle", currentTile["ID"]) and dag.has_edge("house", neighborTile["ID"]):
@@ -102,6 +95,7 @@ class Tile:
         self.rect = self.img.get_rect()
         self.rect.topleft = self.x, self.y
         # attr. related to WFC
+        self.metatile = None
         self.entropy = len(metadata)
         self.potentialTiles = list(metadata) #will be updated as WFC runs
         self.collapsed = False
@@ -114,44 +108,11 @@ class Tile:
 
     def draw(self):
         display.blit(self.img, self.rect)
-
-    # def check_meta_constraints(self):
-    #     # print("hello_this_is_meta_constraints")
-
-    #     # print(self.name)
-    #     # for meta in meta_tiles:
-    #     #     if meta == "house":
-    #     print (self.name)
-    #     print(self.img)
-    #     print(dag.has_edge("house", self.name))
-    #     if dag.has_edge("house", self.name) :
-    #         for potTile in self.potentialTiles:
-    #             if potTile["ID"] in dag["castle"].keys():
-                    
-    #                 self.potentialTiles.remove(potTile)
-    #         for tile in self.potentialTiles:
-    #             print("house neighbours", tile["ID"])
-            
-        
-    #     if dag.has_edge("castle", self.name) :
-    #         for potTile in self.potentialTiles:
-    #             if potTile["ID"] in dag["house"].keys():
-    #                 self.potentialTiles.remove(potTile)
-
-    #         print("castle neighbours", self.potentialTiles)
-
-                        
-
-                
-
-        
+       
     def updateEntropy(self, lowestEntropy):
         
-        placeHolderTileSet = []
-       
-        for potTile in self.potentialTiles:
-
-            
+        placeHolderTileSet = []   
+        for potTile in self.potentialTiles:            
             # assume tile is valid until a neighbor proves otherwise
             validTile = True
             if self.RIGHT_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][0], self.RIGHT_neigh["SOCKET"]) or not metaConstraints(potTile, self.RIGHT_neigh):
@@ -162,13 +123,9 @@ class Tile:
                 validTile = False
             if self.UP_neigh["COLLAPSED"] and not socketMatch(potTile["SOCKETS"][3], self.UP_neigh["SOCKET"]) or not metaConstraints(potTile, self.UP_neigh):
                 validTile = False
-
             if validTile:
-                placeHolderTileSet.append(potTile)
-        
-            
+                placeHolderTileSet.append(potTile)            
         self.potentialTiles = placeHolderTileSet
-
         # Only goes through each single tile once
         seenTile = []
         for tile in self.potentialTiles:
@@ -183,7 +140,6 @@ class Tile:
         if not self.collapsed:
             c = self.c
             r = self.r
-
             if c < DIMS[0]-1:
                 self.RIGHT_neigh = {
                     "COLLAPSED": grid[r][c+1].collapsed, "SOCKET": grid[r][c+1].sockets[2], "ID": grid[r][c+1].id}
@@ -197,20 +153,42 @@ class Tile:
                 self.UP_neigh = {
                     "COLLAPSED": grid[r-1][c].collapsed, "SOCKET": grid[r-1][c].sockets[1], "ID": grid[r-1][c].id}
 
+    
+
     def collapse(self):
+        print("current tile:", self.c, self.r, "with entropy", self.entropy)
         self.collapsed = True
-        if len(self.potentialTiles) > 0:
+        # self.collapsed = True
+        # collapsed_tiles.put(self)
+        # uncollapsed_tiles.remove(self)
+        # print("uncollapsed after collapse", uncollapsed_q.queue)
+        # print("Collapsed tiles:", collapsed_tiles.qsize(), collapsed_tiles.queue)
+        if len(self.potentialTiles) > 1:  
+            weight = 0
+            for potTile in self.potentialTiles:
+            #print(candidate["ID"])
+                identity = potTile["ID"]
+                
+                anc = dag.successors(str(identity))
+                print("ancestors of", id, ":", anc)
+            # root = [n for n in anc if G.in_degree(n) == 0] [0]          
             potTile = random.choice(self.potentialTiles)
+            self.name = potTile["ID"]
+            self.metatile =  list(dag.predecessors(self.name))
+            # print("metatile", self.metatile)
+            # print("collapsed tile", self.name)
+            self.img = pygame.image.load(f"{PATH}/{self.name}.png")
+            self.sockets = potTile["SOCKETS"]
+            self.id = potTile["ID"]
+            self.entropy = 0
+            self.img = pygame.transform.rotate(self.img, -potTile["ROTATION"] * 90)            
         else:
-            potTile = metadata[-1]
-        self.name = potTile["ID"]
-        # print("collapsed tile", self.name)
-        self.img = pygame.image.load(f"{PATH}/{self.name}.png")
-        self.sockets = potTile["SOCKETS"]
-        self.id = potTile["ID"]
-        self.entropy = 0
-        self.img = pygame.transform.rotate(self.img, -potTile["ROTATION"] * 90)
-        collapsed_tiles.put(self)
+            self.collapsed = False
+            self.potentialTiles = list(metadata)
+            print("no potential tiles left, backtracking")
+            explode_neighbors(self)
+        
+        
 
 
 # DD. GRID
@@ -222,6 +200,8 @@ for r in range(DIMS[1]):
     for c in range(DIMS[0]):
         tile = Tile(c, r)
         row.append(tile)
+        uncollapsed_q.put(tile)
+        # print("uncollapsed tiles_grid", uncollapsed_q.queue)
     grid.append(row)
 
 # TEMPLATE FOR GRID
@@ -234,6 +214,7 @@ for r in range(DIMS[1]):
 
 grid[0][0].collapse()
 # grid[0][0].check_meta_constraints()
+# print("predecessors of 26:", list(dag.predecessors("26")))
 
 def draw():
     display.fill("#1e1e1e")
@@ -265,36 +246,88 @@ def update():
         for tile in row:
             if not tile.collapsed and tile.entropy == lowestEntropy:
                 candidates.append(tile)
-
+    # print("candidates", len(candidates))
     if len(candidates) > 0:
-        weight = 0
-        for candidate in candidates:
-            #print(candidate["ID"])
-            identity = grid[candidate.r][candidate.c].id
+        random.choice(candidates).collapse() # Can change to random, or pick the last
             
-            anc = dag.successors(str(identity))
-            print("ancestors of", id, ":", anc)
-           # root = [n for n in anc if G.in_degree(n) == 0] [0]
-        candidates[0].collapse() # Can change to random, or pick the last
+    # propagation(collapsed_tiles, lowestEntropy)
     
-    propagation(collapsed_tiles, lowestEntropy)
+def explode_neighbors(tile):
+    print("exploding neighbors of tile", tile.c, tile.r)   
+    if tile.RIGHT_neigh["COLLAPSED"]==True:
+        if tile.c < DIMS[0]-1:
+            print("exploding right neighbor", grid[tile.r][tile.c+1].c, grid[tile.r][tile.c+1].r)
+            grid[tile.r][tile.c+1].collapsed = False
+            grid[tile.r][tile.c+1].potentialTiles = list(metadata)
+            # collapsed_tiles.get(grid[tile.r][tile.c+1])
+            # grid[tile.r][tile.c+1].updateEntropy(lowestEntropy)
+     
+    if tile.DOWN_neigh["COLLAPSED"]==True:                    
+        if tile.r < DIMS[1]-1:   
+            print("exploding down neighbor", grid[tile.r+1][tile.c].c, grid[tile.r+1][tile.c].r)
+            grid[tile.r+1][tile.c].collapsed = False
+            grid[tile.r+1][tile.c].potentialTiles = list(metadata)
+            # grid[tile.r+1][tile.c].updateEntropy(lowestEntropy)
+            # uncollapsed_tiles.append(grid[tile.r+1][tile.c])
+    
+    if tile.LEFT_neigh["COLLAPSED"]==True: 
+        if tile.c > 0:       
+            print("exploding left neighbor", grid[tile.r][tile.c-1].c, grid[tile.r][tile.c-1].r)
+            grid[tile.r][tile.c-1].collapsed = False
+            grid[tile.r][tile.c-1].potentialTiles = list(metadata)
+            # grid[tile.r][tile.c-1].updateEntropy(lowestEntropy)
+            # uncollapsed_tiles.append(grid[tile.r][tile.c-1])
+    
+    if tile.UP_neigh["COLLAPSED"]==True:
+        if tile.r > 0:
+            print("exploding up neighbor", grid[tile.r-1][tile.c].c, grid[tile.r-1][tile.c].r)
+            grid[tile.r-1][tile.c].collapsed = False
+            grid[tile.r-1][tile.c].potentialTiles = list(metadata)
+            # grid[tile.r-1][tile.c].updateEntropy(lowestEntropy)
+            # uncollapsed_tiles.append(grid[tile.r-1][tile.c])
+
+
+# def depropagation(list_uncollapsed_tiles):
+#     P = []
+#     while len(list_uncollapsed_tiles) > 0:
+#         tile = list_uncollapsed_tiles[0]
+#         list_uncollapsed_tiles.remove(tile)
+#         for neighbor in [tile.RIGHT_neigh, tile.DOWN_neigh, tile.LEFT_neigh, tile.UP_neigh]:
+#             pre = []
+#             post = []
+#             if neighbor == tile.RIGHT_neigh:
+#                 # print("right neighbor")               
+#                 if tile.c < DIMS[0]-1:
+#                     pre = grid[tile.r][tile.c+1].potentialTiles   
+#                     post = neighbor["ID"]         
+#             if neighbor == tile.DOWN_neigh:
+#                 if tile.r < DIMS[1]-1:
+#                         pre = grid[tile.r+1][tile.c].potentialTiles
+#                         post = neighbor["ID"] 
+#             if neighbor == tile.LEFT_neigh:
+#                 if tile.c > 0:
+#                     pre = grid[tile.r][tile.c-1].potentialTiles
+#                     post = neighbor["ID"] 
+#             if neighbor == tile.UP_neigh:
+#                 if tile.r > 0:
+#                     pre = grid[tile.r-1][tile.c].potentialTiles
+#                     post = neighbor["ID"] 
+#             # print("pre", [tile["ID"] for tile in pre])
+            
+
 
 def propagation(queue_collapsed_tiles, lowestEntropy):
-   
     while not queue_collapsed_tiles.empty():
-        #print("queue_collapsed_tiles size", queue_collapsed_tiles.qsize())
-        #if queue_collapsed_tiles.qsize() == 1:
-           # print("queue_collapsed_tiles", queue_collapsed_tiles.queue[0])
         tile = queue_collapsed_tiles.get()
-        tile.collapsed = False
         for neighbor in [tile.RIGHT_neigh, tile.DOWN_neigh, tile.LEFT_neigh, tile.UP_neigh]:
             adj = list(metadata)
+            # print("all tiles", [tile["ID"] for tile in adj])
             cur = tile.potentialTiles #allowed tiles for tile'
-            #print("neighbor", neighbor)
             pre = [] #allowed tiles for neighbor
-            if neighbor == tile.RIGHT_neigh:               
+            if neighbor == tile.RIGHT_neigh:
+                # print("right neighbor")               
                 if tile.c < DIMS[0]-1:
-                    pre = grid[tile.r][tile.c+1].potentialTiles
+                    pre = grid[tile.r][tile.c+1].potentialTiles                  
             if neighbor == tile.DOWN_neigh:
                 if tile.r < DIMS[1]-1:
                         pre = grid[tile.r+1][tile.c].potentialTiles
@@ -304,38 +337,34 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
             if neighbor == tile.UP_neigh:
                 if tile.r > 0:
                     pre = grid[tile.r-1][tile.c].potentialTiles
-           # print("pre", pre)
-            for tile_cur in cur:
-                
-                placeHolderTileSet = []
-       
+            # print("pre", [tile["ID"] for tile in pre])
+            for tile_cur in cur:                
+                placeHolderTileSet = []      
                 for potTile in adj:
                     validTile = True
                     if neighbor == tile.RIGHT_neigh:
-                        if not socketMatch(potTile["SOCKETS"][2], tile_cur["SOCKETS"][0]) or not metaConstraints(potTile, tile_cur):
+                        if not socketMatch(potTile["SOCKETS"][2], tile_cur["SOCKETS"][0]):
                             validTile = False
                     if neighbor == tile.DOWN_neigh:
-                        if not socketMatch(potTile["SOCKETS"][3], tile_cur["SOCKETS"][1]) or not metaConstraints(potTile, tile_cur):
+                        if not socketMatch(potTile["SOCKETS"][3], tile_cur["SOCKETS"][1]):
                             validTile = False
                     if neighbor == tile.LEFT_neigh:
-                        if not socketMatch(potTile["SOCKETS"][0], tile_cur["SOCKETS"][2]) or not metaConstraints(potTile, tile_cur):
+                        if not socketMatch(potTile["SOCKETS"][0], tile_cur["SOCKETS"][2]):
                             validTile = False
                     if neighbor == tile.UP_neigh:
-                        if not socketMatch(potTile["SOCKETS"][1], tile_cur["SOCKETS"][3]) or not metaConstraints(potTile, tile_cur):
+                        if not socketMatch(potTile["SOCKETS"][1], tile_cur["SOCKETS"][3]):
                             validTile = False
-
                     if validTile:
                         placeHolderTileSet.append(potTile)
-                
-                    
+
                 adj = placeHolderTileSet
-               # print ("adj", adj)
+                # print("adj", [tile["ID"] for tile in adj])
 
             post = []    
             for tile_pre in pre:
                 if tile_pre in adj:
                     post.append(tile_pre)
-            #print("post", post)
+            
             n = None
             if neighbor == tile.RIGHT_neigh:               
                 if tile.c < DIMS[0]-1:
@@ -348,22 +377,21 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
                     n = grid[tile.r][tile.c-1]
             if neighbor == tile.UP_neigh:
                 if tile.r > 0:
-                    n = grid[tile.r-1][tile.c]   
+                    n = grid[tile.r-1][tile.c]
+            # print("post", [tile["ID"] for tile in post])   
 
-           # print ("n", n)
             if n!= None:
+                # n.collapsed = False
+                # print("updating neighbor", n)
                 n.potentialTiles = post
-                #print("is going to update entropy")
                 n.updateEntropy(lowestEntropy)
-               # print("updated entropy")
-                n.collapsed = False
+                # n.collapse()
 
-                if len(post) < len(pre):
-                    #print("adding to queue")
+                if len(post) < len(pre) and n.collapsed:
                     queue_collapsed_tiles.put(n)
 
 
 while True:
+
     draw()
     update()
-
