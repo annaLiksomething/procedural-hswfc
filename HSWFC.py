@@ -6,7 +6,7 @@ import random
 
 
 dag = nx.DiGraph()
-dag.add_weighted_edges_from([("root", "village", 0.3), ("root", "castle", 0.3), ("root", "land", 0.3), ("village", "house", 0.5), ("village", "road", 0.5), ("castle", "road", 0.3), ("land", "road", 0.3), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("water", "24", 0.1), ("castle", "0", 0.3), ("castle", "1", 0.3), ("castle", "2", 0.3), ("castle", "5", 0.3), ("castle", "12", 0.1), ("castle", "14", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.6), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
+dag.add_weighted_edges_from([("root", "village", 0.3), ("root", "castle", 0.4), ("root", "land", 0.3), ("village", "house", 0.5), ("village", "road", 0.5), ("castle", "road", 0.3), ("land", "road", 0.3), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("water", "24", 0.1), ("castle", "0", 0.3), ("castle", "1", 0.3), ("castle", "2", 0.3), ("castle", "5", 0.3), ("castle", "12", 0.1), ("castle", "14", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.6), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 # old dag with road being almost everything dag.add_weighted_edges_from([("root", "village", 0.4), ("root", "castle", 0.1), ("root", "land", 0.4), ("village", "house", 0.6), ("village", "road", 0.4), ("castle", "road", 0.1), ("land", "road", 0.6), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("road", "24", 0.1), ("water", "24", 0.1), ("road", "0", 0.1), ("castle", "0", 0.1), ("road", "1", 0.1), ("castle", "1", 0.1), ("road", "2", 0.1), ("castle", "2", 0.1), ("road", "5", 0.1), ("castle", "5", 0.1), ("road", "12", 0.1), ("castle", "12", 0.1), ("road", "14", 0.1), ("castle", "14", 0.1), ("road", "26", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 
 plt.tight_layout()
@@ -165,7 +165,8 @@ class Tile:
     def collapse(self):
         print("current tile:", self.c, self.r, "with entropy", self.entropy)
         self.collapsed = True
-        if len(self.potentialTiles) > 1:   
+        if len(self.potentialTiles) > 1:  
+            #decide which tile depending on their weight 
             weight = 0 
             potTiles=[]
             for tile in self.potentialTiles:
@@ -180,18 +181,23 @@ class Tile:
                             w+=dag[pre_l2][pre]["weight"]
                             predec_l3 = list(dag.predecessors(pre_l2))
                             if predec_l3 == []:
-                                if w >= weight: 
+                                if w > weight: 
+                                    weight = w
+                                    potTiles = [tile]
+                                elif w == weight:
                                     weight = w
                                     potTiles.append(tile)
                             else:
                                 pre_l3 = predec_l3[0] #based on how our graph look there should only be one here
-                                w+=dag[pre_l3][pre_l2]["weight"] 
-                                if w >= weight: 
+                                w+=dag[pre_l3][pre_l2]["weight"]
+                                if w > weight:
+                                    weight = w
+                                    potTiles = [tile]
+                                elif w == weight: 
                                     weight = w
                                     potTiles.append(tile)
-                                    w = f
-                                else:
-                                    w = f #reset to what it was in the beginning of this loop
+
+                                w = f #reset to what it was in the beginning of this loop
       
             potTile = random.choice(potTiles) #if there are more tiles with the same weight, choose randomly
             self.name = potTile["ID"]
