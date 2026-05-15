@@ -5,15 +5,11 @@ import pygame
 import random
 
 
+
 dag = nx.DiGraph()
 dag.add_weighted_edges_from([("root", "village", 0.3), ("root", "castle", 0.4), ("root", "land", 0.3), ("village", "house", 0.5), ("village", "road", 0.5), ("castle", "road", 0.3), ("land", "road", 0.3), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("water", "24", 0.1), ("castle", "0", 0.3), ("castle", "1", 0.3), ("castle", "2", 0.3), ("castle", "5", 0.3), ("castle", "12", 0.1), ("castle", "14", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.6), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 # old dag with road being almost everything dag.add_weighted_edges_from([("root", "village", 0.4), ("root", "castle", 0.1), ("root", "land", 0.4), ("village", "house", 0.6), ("village", "road", 0.4), ("castle", "road", 0.1), ("land", "road", 0.6), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("road", "24", 0.1), ("water", "24", 0.1), ("road", "0", 0.1), ("castle", "0", 0.1), ("road", "1", 0.1), ("castle", "1", 0.1), ("road", "2", 0.1), ("castle", "2", 0.1), ("road", "5", 0.1), ("castle", "5", 0.1), ("road", "12", 0.1), ("castle", "12", 0.1), ("road", "14", 0.1), ("castle", "14", 0.1), ("road", "26", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 
-plt.tight_layout()
-nx.draw_networkx(dag, arrows=True)
-plt.savefig("dag.png", format="PNG")
-# tell matplotlib you're done with the plot: https://stackoverflow.com/questions/741877/how-do-i-tell-matplotlib-that-i-am-done-with-a-plot
-plt.clf()
 
 meta_tiles = ["village", "castle", "land", "road", "water", "house"]
 
@@ -31,7 +27,7 @@ for i in range(28):
 
 # DD
 RES = 128
-DIMS = (17, 10) #14x8)
+DIMS = (14, 8) #14x8
 SCREEN = (DIMS[0]*RES, DIMS[1]*RES) 
 display = pygame.display.set_mode(SCREEN)
 '''
@@ -236,6 +232,8 @@ for r in range(DIMS[1]):
 
 grid[0][0].collapse()
 
+all_tiles_collapsed = False #variable to check when to end the algorithm
+
 def draw():
     display.fill("#1e1e1e")
     for row in grid:
@@ -255,10 +253,12 @@ def update():
             tile.updateNeighbors()
 
     lowestEntropy = None
+    all_tiles_collapsed = True
     for row in grid:
         for tile in row:
             if not tile.collapsed:
                 lowestEntropy = tile.updateEntropy(lowestEntropy)
+                all_tiles_collapsed = False #if there is an uncollapsed tile this is set to false so update will be run again
 
     candidates = []
     for row in grid:
@@ -268,6 +268,8 @@ def update():
    
     if len(candidates) > 0:
         random.choice(candidates).collapse() 
+
+    return all_tiles_collapsed
 
     
 def explode_neighbors(tile):
@@ -374,8 +376,11 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
                 if len(post) < len(pre) and n.collapsed:
                     queue_collapsed_tiles.put(n)
 
-
-while True:
+#this will run until all tiles are collapsed
+while not all_tiles_collapsed: 
 
     draw()
-    update()
+    all_tiles_collapsed = update()
+    if all_tiles_collapsed:
+        pygame.image.save(display, "finalresult.png")
+        pygame.quit()
