@@ -16,6 +16,7 @@ meta_tiles = ["village", "castle", "land", "road", "water", "house"]
 
 terminal_q = Queue()
 collapsed_tiles = Queue()
+tiles_collapsed =[]
 
 
 for i in range(28):
@@ -161,7 +162,7 @@ class Tile:
     def collapse(self):
         print("current tile:", self.c, self.r, "with entropy", self.entropy)
         self.collapsed = True
-        if len(self.potentialTiles) > 1:  
+        if len(self.potentialTiles) > 0:  
             #decide which tile depending on their weight 
             weight = 0 
             potTiles=[]
@@ -202,12 +203,15 @@ class Tile:
             self.sockets = potTile["SOCKETS"]
             self.id = potTile["ID"]
             self.entropy = 0
-            self.img = pygame.transform.rotate(self.img, -potTile["ROTATION"] * 90)            
+            self.img = pygame.transform.rotate(self.img, -potTile["ROTATION"] * 90)
+            tiles_collapsed.append(self)           
         else:
             self.collapsed = False
             self.potentialTiles = list(metadata)
             print("no potential tiles left, backtracking")
             explode_neighbors(self)
+            last_collapsed = tiles_collapsed.pop()
+            explode_neighbors(last_collapsed)
         
         
 # DD. GRID
