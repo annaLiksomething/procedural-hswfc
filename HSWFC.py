@@ -7,8 +7,7 @@ import random
 
 
 dag = nx.DiGraph()
-dag.add_weighted_edges_from([("root", "village", 0.3), ("root", "castle", 0.4), ("root", "land", 0.3), ("village", "house", 0.5), ("village", "road", 0.5), ("castle", "road", 0.3), ("land", "road", 0.3), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("water", "24", 0.1), ("castle", "0", 0.3), ("castle", "1", 0.3), ("castle", "2", 0.3), ("castle", "5", 0.3), ("castle", "12", 0.1), ("castle", "14", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.6), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
-# old dag with road being almost everything dag.add_weighted_edges_from([("root", "village", 0.4), ("root", "castle", 0.1), ("root", "land", 0.4), ("village", "house", 0.6), ("village", "road", 0.4), ("castle", "road", 0.1), ("land", "road", 0.6), ("land", "water", 0.4), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("road", "24", 0.1), ("water", "24", 0.1), ("road", "0", 0.1), ("castle", "0", 0.1), ("road", "1", 0.1), ("castle", "1", 0.1), ("road", "2", 0.1), ("castle", "2", 0.1), ("road", "5", 0.1), ("castle", "5", 0.1), ("road", "12", 0.1), ("castle", "12", 0.1), ("road", "14", 0.1), ("castle", "14", 0.1), ("road", "26", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
+dag.add_weighted_edges_from([("root", "village", 0.3), ("root", "castle", 0.4), ("root", "land", 0.3), ("village", "house", 0.1), ("village", "road", 0.1), ("land", "road", 0.1), ("land", "water", 0.1), ("house", "22", 0.1), ("house", "6", 0.1), ("house", "6", 0.1), ("house", "8", 0.1), ("house", "23", 0.1), ("road", "7", 0.1), ("road", "9", 0.1), ("house", "24", 0.1), ("water", "24", 0.1), ("castle", "0", 0.1), ("castle", "1", 0.1), ("castle", "2", 0.1), ("castle", "5", 0.1), ("castle", "12", 0.1), ("castle", "14", 0.1), ("castle", "26", 0.1), ("water", "26", 0.1), ("castle", "3", 0.1), ("castle", "4", 0.1), ("castle", "10", 0.1), ("castle", "11", 0.1), ("castle", "13", 0.1), ("castle", "15", 0.1), ("road", "21", 0.1), ("water", "21", 0.1), ("road", "25", 0.1), ("water", "25", 0.1), ("castle", "18",0.1), ("water", "18", 0.1), ("castle", "20", 0.1), ("water", "20", 0.1), ("water", "16", 0.1), ("water", "17", 0.1), ("water", "19", 0.1), ("house", "27", 0.1)])
 
 
 meta_tiles = ["village", "castle", "land", "road", "water", "house"]
@@ -77,7 +76,6 @@ def socketMatch(socket, targetsocket):
     return True
 
 def metaConstraints(currentTile, neighborTile):
-    #print ("neighbortile", neighborTile)
     if dag.has_edge("house", currentTile["ID"]) and dag.has_edge("castle", neighborTile["ID"]):
         return False
     if dag.has_edge("castle", currentTile["ID"]) and dag.has_edge("house", neighborTile["ID"]):
@@ -160,7 +158,6 @@ class Tile:
     
 
     def collapse(self):
-        print("current tile:", self.c, self.r, "with entropy", self.entropy)
         self.collapsed = True
         if len(self.potentialTiles) > 0:  
             #decide which tile depending on their weight 
@@ -208,7 +205,6 @@ class Tile:
         else:
             self.collapsed = False
             self.potentialTiles = list(metadata)
-            print("no potential tiles left, backtracking")
             explode_neighbors(self)
             last_collapsed = tiles_collapsed.pop()
             explode_neighbors(last_collapsed)
@@ -277,31 +273,26 @@ def update():
 
     
 def explode_neighbors(tile):
-    print("exploding neighbors of tile", tile.c, tile.r)   
     if tile.RIGHT_neigh["COLLAPSED"]==True:
         if tile.c < DIMS[0]-1:
-            print("exploding right neighbor", grid[tile.r][tile.c+1].c, grid[tile.r][tile.c+1].r)
             grid[tile.r][tile.c+1].collapsed = False
             grid[tile.r][tile.c+1].potentialTiles = list(metadata)
 
      
     if tile.DOWN_neigh["COLLAPSED"]==True:                    
         if tile.r < DIMS[1]-1:   
-            print("exploding down neighbor", grid[tile.r+1][tile.c].c, grid[tile.r+1][tile.c].r)
             grid[tile.r+1][tile.c].collapsed = False
             grid[tile.r+1][tile.c].potentialTiles = list(metadata)
 
     
     if tile.LEFT_neigh["COLLAPSED"]==True: 
         if tile.c > 0:       
-            print("exploding left neighbor", grid[tile.r][tile.c-1].c, grid[tile.r][tile.c-1].r)
             grid[tile.r][tile.c-1].collapsed = False
             grid[tile.r][tile.c-1].potentialTiles = list(metadata)
 
     
     if tile.UP_neigh["COLLAPSED"]==True:
         if tile.r > 0:
-            print("exploding up neighbor", grid[tile.r-1][tile.c].c, grid[tile.r-1][tile.c].r)
             grid[tile.r-1][tile.c].collapsed = False
             grid[tile.r-1][tile.c].potentialTiles = list(metadata)
 
@@ -311,11 +302,9 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
         tile = queue_collapsed_tiles.get()
         for neighbor in [tile.RIGHT_neigh, tile.DOWN_neigh, tile.LEFT_neigh, tile.UP_neigh]:
             adj = list(metadata)
-            # print("all tiles", [tile["ID"] for tile in adj])
             cur = tile.potentialTiles #allowed tiles for tile'
             pre = [] #allowed tiles for neighbor
             if neighbor == tile.RIGHT_neigh:
-                # print("right neighbor")               
                 if tile.c < DIMS[0]-1:
                     pre = grid[tile.r][tile.c+1].potentialTiles                  
             if neighbor == tile.DOWN_neigh:
@@ -327,7 +316,6 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
             if neighbor == tile.UP_neigh:
                 if tile.r > 0:
                     pre = grid[tile.r-1][tile.c].potentialTiles
-            # print("pre", [tile["ID"] for tile in pre])
             for tile_cur in cur:                
                 placeHolderTileSet = []      
                 for potTile in adj:
@@ -348,7 +336,6 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
                         placeHolderTileSet.append(potTile)
 
                 adj = placeHolderTileSet
-                # print("adj", [tile["ID"] for tile in adj])
 
             post = []    
             for tile_pre in pre:
@@ -368,15 +355,10 @@ def propagation(queue_collapsed_tiles, lowestEntropy):
             if neighbor == tile.UP_neigh:
                 if tile.r > 0:
                     n = grid[tile.r-1][tile.c]
-            # print("post", [tile["ID"] for tile in post])   
 
             if n!= None:
-                # n.collapsed = False
-                # print("updating neighbor", n)
                 n.potentialTiles = post
                 n.updateEntropy(lowestEntropy)
-                # n.collapse()
-
                 if len(post) < len(pre) and n.collapsed:
                     queue_collapsed_tiles.put(n)
 
